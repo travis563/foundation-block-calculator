@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Foundation Block Calculator</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Courier New',Courier,monospace;background:#0a0e13;color:#e6edf3;min-height:100vh}
+  .grid-bg{position:fixed;inset:0;z-index:0;pointer-events:none;
+    background-image:linear-gradient(rgba(247,151,62,0.025) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(247,151,62,0.025) 1px,transparent 1px);
+    background-size:40px 40px}
+  .wrap{position:relative;z-index:1;max-width:760px;margin:0 auto;padding:36px 16px 80px}
+  h1{font-size:24px;font-weight:800;color:#fff;letter-spacing:-0.02em;margin-bottom:8px}
+  .supertitle{font-size:10px;color:#f97316;letter-spacing:0.2em;text-transform:uppercase;margin-bottom:6px}
+  .subtitle{color:#4a5568;font-size:13px;line-height:1.6;margin-bottom:28px}
+  .card{background:#111827;border:1px solid #1f2937;border-radius:10px;padding:18px 20px;margin-bottom:20px}
+  .card-sec{font-size:10px;color:#f97316;letter-spacing:0.15em;text-transform:uppercase;margin-bottom:14px}
+  .card-sec.cyan{color:#06b6d4}.card-sec.green{color:#84cc16}.card-sec.purple{color:#e879f9}
+  .row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+  .field{display:flex;flex-direction:column;gap:5px}
+  .field label{font-size:10px;color:#6e7f8f;text-transform:uppercase;letter-spacing:0.1em}
+  .field input,.field select{background:#0d1117;border:1px solid #2a3441;border-radius:6px;
+    padding:9px 11px;color:#e6edf3;font-size:14px;font-family:inherit;outline:none;width:100%}
+  .field input:focus,.field select:focus{border-color:#f97316}
+  .field .hint{font-size:10px;color:#2a3441;margin-top:3px}
+  select option{background:#0d1117;color:#e6edf3}
+  .block-type-btn{flex:1;padding:10px 12px;border-radius:6px;cursor:pointer;font-family:inherit;
+    font-size:12px;font-weight:700;border:1px solid #2a3441;background:#0d1117;
+    color:#6e7f8f;text-align:left;transition:all 0.15s}
+  .block-type-btn.active{border:2px solid #f97316;background:#1a0f00;color:#f97316}
+  .block-type-btn .bname{font-size:13px;margin-bottom:3px}
+  .block-type-btn .bdims{font-size:10px;opacity:0.7;font-weight:400}
+  .block-type-btn .bvoid{font-size:10px;color:#3d4f61;margin-top:2px}
+  .seg-card{background:#0d1117;border:1px solid #1f2937;border-left:3px solid #2a3441;
+    border-radius:8px;padding:12px 14px;margin-bottom:4px}
+  .seg-card.stepped{border-left-color:#a855f7}
+  .corner-card{background:#0d1117;border:1px solid #1f2937;border-left:3px solid #f97316;
+    border-radius:8px;padding:12px 14px;margin-bottom:8px}
+  .seg-num{min-width:26px;height:26px;background:#1f2937;border-radius:4px;
+    display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#f97316;flex-shrink:0}
+  .corner-num{min-width:26px;height:26px;background:#1a0f00;border-radius:4px;
+    display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#f97316;flex-shrink:0}
+  .seg-inputs{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
+  .remove-btn{background:none;border:1px solid #2a3441;border-radius:6px;
+    padding:8px 10px;color:#dc2626;cursor:pointer;font-size:14px;flex-shrink:0}
+  .remove-btn:disabled{color:#1f2937;cursor:default}
+  .badge{display:inline-block;border-radius:4px;padding:2px 8px;font-size:11px;
+    font-weight:700;letter-spacing:0.06em;text-transform:uppercase;white-space:nowrap;margin:2px}
+  .seg-badges{display:flex;gap:4px;flex-wrap:wrap;margin-top:10px;align-items:center}
+  .seg-badges .note{font-size:10px;color:#3d4f61;margin-left:4px}
+  .connector{display:flex;align-items:center;gap:8px;padding-left:16px;height:26px}
+  .connector-line{width:2px;height:100%;background:#1f2937}
+  .connector-line.stepped{background:#a855f7}
+  .connector-label{font-size:11px;color:#a855f7}
+  .loop-back{display:flex;align-items:center;gap:8px;padding-left:16px;height:22px;margin-bottom:4px}
+  .loop-back .connector-line{background:#1f2937}
+  .loop-back span{font-size:10px;color:#2a3441}
+  .add-btn{width:100%;background:none;border:1px dashed #2a3441;border-radius:8px;
+    padding:12px;color:#f97316;cursor:pointer;font-size:13px;font-family:inherit;
+    letter-spacing:0.05em;margin-top:8px;transition:border-color 0.15s}
+  .add-btn:hover{border-color:#f97316}
+  .divider{height:1px;background:#1f2937;margin:22px 0}
+  .num-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+  .num-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px}
+  .num-box{background:#0d1117;border-radius:8px;padding:14px 16px;border-left:3px solid #f97316}
+  .num-box .nb-label{font-size:10px;color:#6e7f8f;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px}
+  .num-box .nb-val{font-size:32px;font-weight:800;line-height:1;margin-bottom:3px}
+  .num-box .nb-sub{font-size:11px;color:#3d4f61}
+  .banner{border-radius:10px;padding:18px 24px;display:flex;
+    justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:12px}
+  .ban-label{font-size:10px;letter-spacing:0.15em;text-transform:uppercase}
+  .ban-sub{font-size:12px;color:#3d4f61;margin-top:3px}
+  .ban-val{font-size:44px;font-weight:800}
+  .notes{padding:12px 16px;background:#0d1117;border:1px solid #1f2937;
+    border-radius:8px;font-size:11px;color:#3d4f61;line-height:1.8;margin-bottom:16px}
+  .notes strong{color:#4a5568}
+  .reo-table{background:#0d1117;border:1px solid #1f2937;border-radius:8px;padding:14px 16px;margin-bottom:14px}
+  .reo-row{display:flex;justify-content:space-between;align-items:center;
+    padding:6px 0;border-bottom:1px solid #111827;flex-wrap:wrap;gap:6px}
+  .reo-row:last-child{border-bottom:none}
+  .reo-label{font-size:12px;color:#6e7f8f}
+  .reo-vals{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .reo-count{font-size:12px;color:#e6edf3;font-weight:700}
+  .reo-detail{font-size:11px;color:#3d4f61}
+  .hrun-card{background:#0d1117;border:1px solid #1f2937;border-left:3px solid #2a3441;
+    border-radius:8px;padding:14px 16px;margin-bottom:12px}
+  .hrun-card.active{border-color:#e879f933;border-left:3px solid #e879f9}
+  .hrun-inner{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px}
+  .sub-divider{border-top:1px solid #1f2937;padding-top:14px;margin-top:14px}
+  .sub-sec{font-size:10px;letter-spacing:0.15em;text-transform:uppercase;margin-bottom:10px}
+  @media(max-width:500px){.num-grid-3{grid-template-columns:1fr 1fr}.ban-val{font-size:32px}}
+</style>
+</head>
+<body>
+<div class="grid-bg"></div>
+<div class="wrap">
+  <div class="supertitle">Stepped Footing Estimator</div>
+  <h1>Foundation Block Calculator</h1>
+  <p class="subtitle">Add each wall segment and your external corners separately. All block types calculated per your stacking rules.</p>
+
+  <!-- SETTINGS -->
+  <div class="card">
+    <div class="card-sec">&#9658; Settings</div>
+    <div class="field" style="margin-bottom:14px">
+      <label>Block Type</label>
+      <div style="display:flex;gap:8px;margin-top:4px" id="block-type-btns"></div>
+    </div>
+    <div class="row">
+      <div class="field" style="flex:1 1 90px">
+        <label>Wastage %</label>
+        <input type="number" id="wastage" value="5" min="0" max="30"/>
+      </div>
+      <div class="field" style="flex:1 1 120px">
+        <label>Core Void / Block (L)</label>
+        <input type="number" id="coreVoid" value="6.0" min="0.1" step="0.1"/>
+        <span class="hint">auto-set from block type</span>
+      </div>
+    </div>
+    <div class="sub-divider">
+      <div class="sub-sec" style="color:#84cc16">&#9658; N12 Vertical Reo Settings</div>
+      <div class="row">
+        <div class="field" style="flex:1 1 100px">
+          <label>Low Spacing (mm)</label>
+          <select id="reoLowSp">
+            <option value="600">600mm</option>
+            <option value="800" selected>800mm</option>
+            <option value="1000">1000mm</option>
+            <option value="1200">1200mm</option>
+          </select>
+        </div>
+        <div class="field" style="flex:1 1 100px">
+          <label>High Spacing (mm)</label>
+          <select id="reoHighSp">
+            <option value="400">400mm</option>
+            <option value="600" selected>600mm</option>
+            <option value="800">800mm</option>
+          </select>
+        </div>
+        <div class="field" style="flex:1 1 120px">
+          <label>Switch to high at</label>
+          <select id="reoSwitchAt"></select>
+          <span class="hint">check engineer's drawings</span>
+        </div>
+        <div class="field" style="flex:1 1 100px">
+          <label>Footing Embedment (mm)</label>
+          <input type="number" id="reoLap" value="300" min="100" step="50"/>
+        </div>
+        <div class="field" style="flex:1 1 80px">
+          <label>Stock Length (m)</label>
+          <input type="number" id="reoStock" value="6" min="1" step="0.5"/>
+        </div>
+      </div>
+    </div>
+    <div class="sub-divider">
+      <div class="sub-sec" style="color:#e879f9">&#9658; Horizontal Reo Settings</div>
+      <p style="font-size:11px;color:#3d4f61;margin-bottom:12px;line-height:1.5">Horizontal bars run through the KO block cores along the full wall length. Each run is calculated separately with overlaps at joins.</p>
+      <div class="row">
+        <div class="field" style="flex:1 1 120px">
+          <label>Run 1 starts at course</label>
+          <select id="hRun1At"></select>
+        </div>
+        <div class="field" style="flex:1 1 120px">
+          <label>Run 2 starts at course</label>
+          <select id="hRun2At"></select>
+        </div>
+        <div class="field" style="flex:1 1 110px">
+          <label>Overlap at joins (mm)</label>
+          <input type="number" id="hOverlap" value="500" min="100" step="50"/>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WALL SEGMENTS -->
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <div class="card-sec" style="margin-bottom:0">&#9658; Wall Segments</div>
+      <span id="seg-count" style="font-size:11px;color:#3d4f61"></span>
+    </div>
+    <div id="segments-list"></div>
+    <div class="loop-back"><div class="connector-line"></div><span>&#8617; closes to segment 1</span></div>
+    <button class="add-btn" id="add-seg-btn">+ Add wall segment</button>
+  </div>
+
+  <!-- EXTERNAL CORNERS -->
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+      <div class="card-sec" style="margin-bottom:0">&#9658; External Corners Only</div>
+      <span id="corner-count" style="font-size:11px;color:#3d4f61"></span>
+    </div>
+    <p style="font-size:12px;color:#3d4f61;margin-bottom:14px;line-height:1.6">External (outward-facing) corners only. KO and Half Height are already counted in wall segments &mdash; corners here only add <span style="color:#f97316">Solid Corner blocks</span>: <span style="color:#f97316">courses &minus; 1 SC per corner</span>.</p>
+    <div id="corners-list"></div>
+    <button class="add-btn" id="add-corner-btn">+ Add external corner</button>
+  </div>
+
+  <!-- RESULTS -->
+  <div id="results" style="display:none">
+    <div class="divider"></div>
+    <div class="card-sec" id="results-title"></div>
+    <div class="num-grid" id="block-boxes"></div>
+    <div class="banner" style="background:linear-gradient(135deg,#1a0f00,#0d1117);border:1px solid #f97316">
+      <div><div class="ban-label" style="color:#f97316">Total blocks to order</div><div class="ban-sub" id="wastage-note"></div></div>
+      <div class="ban-val" style="color:#f97316" id="total-blocks-val"></div>
+    </div>
+    <div class="notes" id="stacking-notes"></div>
+    <div class="divider"></div>
+    <div class="card-sec cyan">&#9658; Concrete Core Fill Volume</div>
+    <div class="num-grid" id="concrete-boxes"></div>
+    <div id="concrete-banner" class="banner" style="background:linear-gradient(135deg,#001a1f,#0d1117);border:1px solid #06b6d4"></div>
+    <div class="notes" id="concrete-notes"></div>
+    <div class="divider"></div>
+    <div class="card-sec green">&#9658; N12 Vertical Reo Bar Quantities</div>
+    <div class="num-grid-3" id="vreo-boxes"></div>
+    <div class="reo-table" id="vreo-table"></div>
+    <div class="notes" id="vreo-notes"></div>
+    <div class="divider"></div>
+    <div class="card-sec purple">&#9658; Horizontal Reo Bar &mdash; N12</div>
+    <div id="hreo-runs"></div>
+    <div id="hreo-total-banner"></div>
+    <div class="notes" id="hreo-notes"></div>
+  </div>
+</div>
+
+<script>
+var BLOCK_TYPES = {
+  "1901": { label:"1901 Block", dims:"390 x 190 x 190mm", lenMM:400, heightMM:200, defaultVoidL:6.0 },
+  "1501": { label:"1501 Block", dims:"390 x 190 x 150mm", lenMM:400, heightMM:200, defaultVoidL:4.7 }
+};
+var COURSE_OPTIONS = ["1","1.5","2","2.5","3","3.5","4","4.5","5","5.5","6"];
+
+function courseLabel(o) {
+  return String(o).endsWith(".5")
+    ? Math.floor(parseFloat(o)) + "\u00bd courses"
+    : o + " course" + (o === "1" ? "" : "s");
+}
+function parseCourses(v) { var n = parseFloat(v); return isNaN(n) ? 0 : Math.max(0, n); }
+
+var _uid = 10;
+function uid() { return ++_uid; }
+
+var blockType = "1901";
+var segments = [{ id:1, length:"", courses:"2", label:"" }];
+var corners  = [{ id:2, courses:"2", label:"" }];
+
+function buildCourseSelect(el, defaultVal) {
+  el.innerHTML = "";
+  COURSE_OPTIONS.forEach(function(o) {
+    var opt = document.createElement("option");
+    opt.value = o;
+    opt.textContent = courseLabel(o);
+    if (String(o) === String(defaultVal)) opt.selected = true;
+    el.appendChild(opt);
+  });
+}
+
+function renderBlockTypeBtns() {
+  var container = document.getElementById("block-type-btns");
+  container.innerHTML = "";
+  Object.keys(BLOCK_TYPES).forEach(function(key) {
+    var def = BLOCK_TYPES[key];
+    var btn = document.createElement("button");
+    btn.className = "block-type-btn" + (blockType === key ? " active" : "");
+    btn.innerHTML = '<div class="bname">' + def.label + '</div><div class="bdims">' + def.dims + '</div><div class="bvoid">Core void: ' + def.defaultVoidL + 'L</div>';
+    btn.onclick = function() {
+      blockType = key;
+      document.getElementById("coreVoid").value = def.defaultVoidL;
+      renderBlockTypeBtns();
+      recalc();
+    };
+    container.appendChild(btn);
+  });
+}
+
+// Init course selects
+buildCourseSelect(document.getElementById("reoSwitchAt"), "4");
+buildCourseSelect(document.getElementById("hRun1At"), "4");
+buildCourseSelect(document.getElementById("hRun2At"), "6");
+renderBlockTypeBtns();
+
+// Segments
+document.getElementById("add-seg-btn").onclick = function() {
+  var last = segments[segments.length-1];
+  segments.push({ id:uid(), length:"", courses: last ? last.courses : "2", label:"" });
+  renderSegments(); recalc();
+};
+
+function removeSegment(id) {
+  if (segments.length === 1) return;
+  segments = segments.filter(function(s){ return s.id !== id; });
+  renderSegments(); recalc();
+}
+function updateSegment(id, field, value) {
+  var s = segments.find(function(s){ return s.id === id; });
+  if (s) { s[field] = value; recalc(); }
+}
+
+function renderSegments() {
+  var list = document.getElementById("segments-list");
+  list.innerHTML = "";
+  document.getElementById("seg-count").textContent = segments.length + " segment" + (segments.length !== 1 ? "s" : "");
+
+  segments.forEach(function(seg, i) {
+    var prevC = i > 0 ? parseCourses(segments[i-1].courses) : null;
+    var thisC = parseCourses(seg.courses);
+    var isStep = prevC !== null && prevC !== thisC;
+    var stepUp = isStep && thisC > prevC;
+    var diff = isStep ? Math.abs(thisC - prevC) : 0;
+
+    if (i > 0) {
+      var conn = document.createElement("div");
+      conn.className = "connector";
+      conn.innerHTML = '<div class="connector-line' + (isStep ? " stepped" : "") + '"></div>' +
+        (isStep ? '<span class="connector-label">' + (stepUp ? "\u25b2" : "\u25bc") + " steps " + (diff % 1 ? "\u00bd" : diff) + " course" + (diff !== 1 ? "s" : "") + "</span>" : "");
+      list.appendChild(conn);
+    }
+
+    var card = document.createElement("div");
+    card.className = "seg-card" + (isStep ? " stepped" : "");
+    card.innerHTML =
+      '<div class="seg-inputs">' +
+        '<div class="seg-num">' + (i+1) + '</div>' +
+        '<div class="field" style="flex:2 1 110px"><label>Label</label>' +
+          '<input type="text" placeholder="e.g. North wall" value="' + seg.label + '" data-id="' + seg.id + '" data-field="label"/></div>' +
+        '<div class="field" style="flex:1 1 80px"><label>Length (m)</label>' +
+          '<input type="number" min="0" step="0.1" placeholder="0.0" value="' + seg.length + '" data-id="' + seg.id + '" data-field="length"/></div>' +
+        '<div class="field" style="flex:1 1 110px"><label>Courses high</label>' +
+          '<select data-id="' + seg.id + '" data-field="courses" id="seg-sel-' + seg.id + '"></select></div>' +
+        '<button class="remove-btn" data-remove="' + seg.id + '"' + (segments.length===1?" disabled":"") + '>&#10005;</button>' +
+      '</div>' +
+      '<div class="seg-badges" id="seg-badges-' + seg.id + '"></div>';
+    list.appendChild(card);
+
+    buildCourseSelect(document.getElementById("seg-sel-" + seg.id), seg.courses);
+
+    card.querySelectorAll("input[data-field], select[data-field]").forEach(function(el) {
+      el.addEventListener("input", function() { updateSegment(parseInt(el.dataset.id), el.dataset.field, el.value); });
+      el.addEventListener("change", function() { updateSegment(parseInt(el.dataset.id), el.dataset.field, el.value); });
+    });
+    var removeBtn = card.querySelector("[data-remove]");
+    if (removeBtn) removeBtn.onclick = function() { removeSegment(parseInt(removeBtn.dataset.remove)); };
+  });
+}
+
+// Corners
+document.getElementById("add-corner-btn").onclick = function() {
+  var last = corners[corners.length-1];
+  corners.push({ id:uid(), courses: last ? last.courses : "2", label:"" });
+  renderCorners(); recalc();
+};
+
+function removeCorner(id) {
+  corners = corners.filter(function(c){ return c.id !== id; });
+  renderCorners(); recalc();
+}
+function updateCorner(id, field, value) {
+  var c = corners.find(function(c){ return c.id === id; });
+  if (c) { c[field] = value; renderCorners(); recalc(); }
+}
+
+function renderCorners() {
+  var list = document.getElementById("corners-list");
+  list.innerHTML = "";
+  document.getElementById("corner-count").textContent = corners.length + " corner" + (corners.length !== 1 ? "s" : "");
+
+  if (corners.length === 0) {
+    list.innerHTML = '<div style="padding:16px;text-align:center;color:#2a3441;font-size:13px;border:1px dashed #1f2937;border-radius:8px;margin-bottom:8px">No external corners added</div>';
+    return;
+  }
+
+  corners.forEach(function(c, i) {
+    var fullC = Math.floor(parseCourses(c.courses));
+    var cSC = Math.max(0, fullC - 1);
+    var card = document.createElement("div");
+    card.className = "corner-card";
+    card.innerHTML =
+      '<div class="seg-inputs">' +
+        '<div class="corner-num">C' + (i+1) + '</div>' +
+        '<div class="field" style="flex:2 1 120px"><label>Label</label>' +
+          '<input type="text" placeholder="e.g. NW corner" value="' + c.label + '" data-id="' + c.id + '" data-field="label"/></div>' +
+        '<div class="field" style="flex:1 1 110px"><label>Courses high</label>' +
+          '<select data-id="' + c.id + '" data-field="courses" id="cor-sel-' + c.id + '"></select></div>' +
+        '<button class="remove-btn" data-remove="' + c.id + '">&#10005;</button>' +
+      '</div>' +
+      '<div class="seg-badges" style="margin-top:10px">' +
+        (cSC > 0
+          ? '<span class="badge" style="background:#f9731622;border:1px solid #f9731655;color:#f97316">' + cSC + ' SC</span>' +
+            '<span style="font-size:10px;color:#3d4f61;margin-left:4px">(courses &minus; 1 = ' + cSC + ' Solid Corner' + (cSC!==1?"s":"") + ')</span>'
+          : '<span style="font-size:11px;color:#3d4f61">1 course &mdash; no SC needed</span>') +
+      '</div>';
+    list.appendChild(card);
+
+    buildCourseSelect(document.getElementById("cor-sel-" + c.id), c.courses);
+
+    card.querySelectorAll("input[data-field], select[data-field]").forEach(function(el) {
+      el.addEventListener("input", function() { updateCorner(parseInt(el.dataset.id), el.dataset.field, el.value); });
+      el.addEventListener("change", function() { updateCorner(parseInt(el.dataset.id), el.dataset.field, el.value); });
+    });
+    var removeBtn = card.querySelector("[data-remove]");
+    if (removeBtn) removeBtn.onclick = function() { removeCorner(parseInt(removeBtn.dataset.remove)); };
+  });
+}
+
+var COL = { ko:"#3b82f6", sc:"#f97316", h:"#22c55e", hh:"#a855f7", concrete:"#06b6d4", vreo:"#84cc16", hreo:"#e879f9" };
+
+function badge(color, text) {
+  return '<span class="badge" style="background:' + color + '22;border:1px solid ' + color + '55;color:' + color + '">' + text + '</span>';
+}
+function numBox(val, color, label, sub) {
+  return '<div class="num-box" style="border-left-color:' + color + '"><div class="nb-label">' + label + '</div><div class="nb-val" style="color:' + color + '">' + val + '</div>' + (sub ? '<div class="nb-sub">' + sub + '</div>' : '') + '</div>';
+}
+
+function recalc() {
+  var bDef = BLOCK_TYPES[blockType] || BLOCK_TYPES["1901"];
+  var blkLenMM = bDef.lenMM;
+  var courseH  = bDef.heightMM;
+  var wastPct  = (parseFloat(document.getElementById("wastage").value)||0)/100;
+  var coreVoid = parseFloat(document.getElementById("coreVoid").value)||6.0;
+  var reoLowSp  = parseInt(document.getElementById("reoLowSp").value)||800;
+  var reoHighSp = parseInt(document.getElementById("reoHighSp").value)||600;
+  var reoSwitch = parseFloat(document.getElementById("reoSwitchAt").value)||4;
+  var reoLap    = parseInt(document.getElementById("reoLap").value)||300;
+  var reoStock  = parseFloat(document.getElementById("reoStock").value)||6;
+  var hRun1At   = parseFloat(document.getElementById("hRun1At").value)||4;
+  var hRun2At   = parseFloat(document.getElementById("hRun2At").value)||6;
+  var hOverlap  = parseInt(document.getElementById("hOverlap").value)||500;
+  var stockMM   = reoStock * 1000;
+  function ww(n){ return Math.ceil(n*(1+wastPct)); }
+
+  var validSegs = segments.filter(function(s){ return parseFloat(s.length)>0 && parseCourses(s.courses)>0; });
+
+  // Block counts
+  var totalKO=0, totalH=0, totalHH=0, totalSC=0;
+  var segCalc = validSegs.map(function(seg, i) {
+    var lenMM = parseFloat(seg.length)*1000;
+    var courses = parseCourses(seg.courses);
+    var fullC = Math.floor(courses);
+    var hasHalf = (courses%1)>=0.45;
+    var pos = Math.max(0, Math.round(lenMM/blkLenMM));
+    var runKO = pos, runH = pos*Math.max(0,fullC-1), runHH = hasHalf?pos:0;
+    totalKO+=runKO; totalH+=runH; totalHH+=runHH;
+    var prevC = i>0 ? parseCourses(validSegs[i-1].courses) : null;
+    return { seg:seg, pos:pos, fullC:fullC, hasHalf:hasHalf, runKO:runKO, runH:runH, runHH:runHH,
+      isStep: prevC!==null && prevC!==courses, stepDiff: prevC!==null?courses-prevC:0 };
+  });
+  corners.forEach(function(c) {
+    var courses = parseCourses(c.courses);
+    if(courses<=0) return;
+    totalSC += Math.max(0, Math.floor(courses)-1);
+  });
+  var rawTotal = totalKO+totalH+totalHH+totalSC;
+
+  // Concrete
+  var voidM3 = coreVoid/1000;
+  var fullFill = totalH+totalSC+totalHH, halfFill = totalKO;
+  var concFull = fullFill*voidM3, concHalf = halfFill*voidM3*0.5;
+  var concTotal = concFull+concHalf;
+  var concOrder = Math.ceil(concTotal*1.10*100)/100;
+
+  // Vertical reo
+  var vReoTotalBars=0, vReoTotalMM=0;
+  var vReoSegs = validSegs.map(function(seg) {
+    var lenMM = parseFloat(seg.length)*1000;
+    var courses = parseCourses(seg.courses);
+    var fullC = Math.floor(courses), hasHalf = (courses%1)>=0.45;
+    var spacing = courses>=reoSwitch ? reoHighSp : reoLowSp;
+    var bars = Math.max(1, Math.round(lenMM/spacing));
+    var barLen = reoLap + fullC*courseH + (hasHalf?courseH/2:0) + 400;
+    var lineal = bars*barLen;
+    vReoTotalBars+=bars; vReoTotalMM+=lineal;
+    return { seg:seg, spacing:spacing, bars:bars, barLen:barLen, lineal:lineal, courses:courses, usedHigh:courses>=reoSwitch };
+  });
+  corners.forEach(function(c) {
+    var courses = parseCourses(c.courses);
+    if(courses<=0) return;
+    var fullC = Math.floor(courses), hasHalf = (courses%1)>=0.45;
+    var barLen = reoLap + fullC*courseH + (hasHalf?courseH/2:0) + 400;
+    vReoTotalBars+=1; vReoTotalMM+=barLen;
+  });
+  var vReoLinealM = vReoTotalMM/1000;
+  var vReoLengths = Math.ceil(vReoTotalMM/stockMM);
+
+  // Horizontal reo
+  var hRuns = [hRun1At, hRun2At].map(function(threshold, idx) {
+    var qualSegs = validSegs.filter(function(s){ return parseCourses(s.courses)>=threshold; });
+    if(qualSegs.length===0) return { run:idx+1, threshold:threshold, qualSegs:[], perimMM:0, joins:0, totalMM:0, lengths:0, lenM:0 };
+    var perimMM = qualSegs.reduce(function(a,s){ return a+parseFloat(s.length)*1000; }, 0);
+    var joins = qualSegs.length;
+    var totalMM = perimMM + joins*hOverlap;
+    var lengths = Math.ceil(totalMM/stockMM);
+    return { run:idx+1, threshold:threshold, qualSegs:qualSegs, perimMM:perimMM, joins:joins, totalMM:totalMM, lengths:lengths, lenM:totalMM/1000 };
+  });
+  var hReoTotalLengths = hRuns.reduce(function(a,r){ return a+r.lengths; }, 0);
+  var hReoTotalLineal  = hRuns.reduce(function(a,r){ return a+(r.lenM||0); }, 0);
+
+  // Segment badges
+  segCalc.forEach(function(r) {
+    var el = document.getElementById("seg-badges-"+r.seg.id);
+    if(!el) return;
+    el.innerHTML =
+      badge(COL.ko, r.runKO+" KO") +
+      (r.runH>0 ? badge(COL.h, r.runH+" H") : "") +
+      (r.runHH>0 ? badge(COL.hh, r.runHH+" HH") : "") +
+      '<span class="note">' + r.pos + " positions \u00b7 " + r.fullC + " course" + (r.fullC!==1?"s":"") + (r.hasHalf?" + \u00bd":"") + "</span>";
+  });
+
+  if(validSegs.length===0){ document.getElementById("results").style.display="none"; return; }
+  document.getElementById("results").style.display="block";
+
+  var perimM = validSegs.reduce(function(a,s){ return a+parseFloat(s.length); }, 0).toFixed(2);
+  document.getElementById("results-title").textContent =
+    "\u25b8 Total Block Order \u2014 " + perimM + "m \u00b7 " + validSegs.length + " segment" + (validSegs.length!==1?"s":"") + " \u00b7 " + corners.length + " external corner" + (corners.length!==1?"s":"");
+
+  document.getElementById("block-boxes").innerHTML =
+    numBox(ww(totalKO), COL.ko, "Knock Out Blocks",   totalKO+" base") +
+    numBox(ww(totalSC), COL.sc, "Solid Corners",       totalSC+" base \u00b7 external corners only") +
+    numBox(ww(totalH),  COL.h,  "H Blocks",            totalH+" base") +
+    numBox(ww(totalHH), COL.hh, "Half Height Blocks",  totalHH+" base");
+
+  document.getElementById("total-blocks-val").textContent = ww(rawTotal);
+  document.getElementById("wastage-note").textContent = "incl. " + Math.round(wastPct*100) + "% wastage \u00b7 rounded up";
+
+  document.getElementById("stacking-notes").innerHTML =
+    "<strong>Stacking rules:</strong><br>Wall: positions = length &divide; " + blkLenMM + "mm &middot; each position &rarr; " +
+    "<strong style='color:" + COL.ko + "'>1 KO top</strong> + (courses&minus;1) H blocks + 1 HH if .5 course.<br>" +
+    "External corner: <strong style='color:" + COL.sc + "'>(courses&minus;1) Solid Corners only</strong> &mdash; KO and HH already in wall segments.<br>" +
+    "Internal corners covered by adjacent wall segment H block counts. Verify with your engineer and supplier.";
+
+  document.getElementById("concrete-boxes").innerHTML =
+    '<div class="num-box" style="border-left-color:'+COL.concrete+'"><div class="nb-label">Full Fill</div><div class="nb-val" style="color:'+COL.concrete+'">'+concFull.toFixed(3)+' m&sup3;</div><div class="nb-sub">'+fullFill+' blocks (H + SC + HH) &times; '+coreVoid+'L</div></div>' +
+    '<div class="num-box" style="border-left-color:'+COL.ko+'"><div class="nb-label">Half Fill (KO blocks)</div><div class="nb-val" style="color:'+COL.ko+'">'+concHalf.toFixed(3)+' m&sup3;</div><div class="nb-sub">'+halfFill+' KO blocks &times; '+coreVoid+'L &times; 50%</div></div>';
+
+  document.getElementById("concrete-banner").innerHTML =
+    '<div><div class="ban-label" style="color:'+COL.concrete+'">Net concrete volume</div><div style="font-size:36px;font-weight:800;color:'+COL.concrete+'">'+concTotal.toFixed(3)+' m&sup3;</div></div>' +
+    '<div style="text-align:right"><div class="ban-label" style="color:'+COL.concrete+'">Order (incl. 10% pour waste)</div><div style="font-size:36px;font-weight:800;color:#fff">'+concOrder.toFixed(2)+' m&sup3;</div></div>';
+
+  document.getElementById("concrete-notes").innerHTML =
+    "<strong>Core fill notes:</strong><br>KO blocks are filled <strong style='color:"+COL.ko+"'>halfway only</strong>. All other blocks (H, SC, HH) are <strong style='color:"+COL.concrete+"'>fully filled</strong>.<br>Order includes 10% for pump line, spillage and settlement. Adjust core void in settings if your supplier gives a different figure.";
+
+  document.getElementById("vreo-boxes").innerHTML =
+    numBox(vReoTotalBars, COL.vreo, "Total Bars", "vertical bars incl. corners") +
+    numBox(vReoLinealM.toFixed(1)+"m", COL.vreo, "Lineal Metres", "total N12 bar required") +
+    numBox(vReoLengths, "#fff", "Order ("+reoStock+"m lengths)", "lengths of "+reoStock+"m N12 bar");
+
+  var tableHtml = '<div style="font-size:10px;color:#6e7f8f;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:10px">Per-segment breakdown</div>';
+  vReoSegs.forEach(function(r, i) {
+    tableHtml += '<div class="reo-row"><div class="reo-label">'+(r.seg.label||"Segment "+(i+1))+'</div><div class="reo-vals">'+
+      badge(r.usedHigh?COL.sc:COL.vreo, r.spacing+"mm spacing")+
+      '<span class="reo-count">'+r.bars+' bars</span>'+
+      '<span class="reo-detail">&times; '+(r.barLen/1000).toFixed(2)+'m = '+(r.lineal/1000).toFixed(2)+'m</span>'+
+      (r.usedHigh?'<span style="font-size:10px;color:'+COL.sc+'">&uarr; high spacing</span>':"")+
+    '</div></div>';
+  });
+  corners.filter(function(c){ return parseCourses(c.courses)>0; }).forEach(function(c, i) {
+    var courses = parseCourses(c.courses);
+    var fullC = Math.floor(courses), hasHalf = (courses%1)>=0.45;
+    var barLen = (reoLap + fullC*courseH + (hasHalf?courseH/2:0) + 400)/1000;
+    tableHtml += '<div class="reo-row"><div class="reo-label">'+(c.label||"Corner "+(i+1))+'</div><div class="reo-vals"><span class="reo-count">1 bar</span><span class="reo-detail">&times; '+barLen.toFixed(2)+'m</span></div></div>';
+  });
+  document.getElementById("vreo-table").innerHTML = tableHtml;
+
+  document.getElementById("vreo-notes").innerHTML =
+    "<strong>Vertical reo notes:</strong><br>Spacing switches from <strong style='color:"+COL.vreo+"'>"+reoLowSp+"mm &rarr; "+reoHighSp+"mm</strong> at <strong style='color:"+COL.sc+"'>"+courseLabel(String(reoSwitch))+"</strong> and above &mdash; confirm with engineer's drawings.<br>" +
+    "Bar length = "+reoLap+"mm into footing + wall height + <strong style='color:"+COL.vreo+"'>400mm proud above KO block</strong>. Each external corner gets 1 bar.<br>" +
+    "Block type: <strong style='color:"+COL.sc+"'>"+bDef.label+"</strong> ("+bDef.dims+").";
+
+  var hRunsHtml = "";
+  hRuns.forEach(function(run) {
+    var active = run.qualSegs.length > 0;
+    hRunsHtml += '<div class="hrun-card '+(active?"active":"")+'">' +
+      '<div class="hrun-inner">' +
+        '<div><div style="font-size:10px;color:#6e7f8f;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px">Run '+run.run+' &mdash; starts at '+courseLabel(String(run.threshold))+' &amp; above</div>' +
+        (!active
+          ? '<div style="font-size:13px;color:#3d4f61">No segments reach '+courseLabel(String(run.threshold))+' &mdash; not required</div>'
+          : '<div style="font-size:28px;font-weight:800;color:'+COL.hreo+';line-height:1;margin-bottom:6px">'+run.lenM.toFixed(2)+'m</div>' +
+            '<div style="font-size:11px;color:#3d4f61">'+(run.perimMM/1000).toFixed(2)+'m wall + '+run.joins+' &times; '+hOverlap+'mm laps = '+run.lenM.toFixed(2)+'m total</div>') +
+        '</div>' +
+        (active ? '<div style="text-align:right"><div style="font-size:10px;color:'+COL.hreo+';text-transform:uppercase;letter-spacing:0.1em">Order ('+reoStock+'m lengths)</div><div style="font-size:28px;font-weight:800;color:#fff">'+run.lengths+'</div><div style="font-size:11px;color:#3d4f61">'+run.qualSegs.length+' segment'+(run.qualSegs.length!==1?"s":"")+" qualify</div></div>" : "") +
+      '</div>' +
+      (active ? '<div style="margin-top:10px;padding-top:10px;border-top:1px solid #1f2937;display:flex;gap:4px;flex-wrap:wrap">'+
+        run.qualSegs.map(function(s){ return badge(COL.hreo, (s.label||"unnamed")+" \u2014 "+parseFloat(s.length).toFixed(1)+"m @ "+s.courses+" courses"); }).join("") +
+      '</div>' : "") +
+    '</div>';
+  });
+  document.getElementById("hreo-runs").innerHTML = hRunsHtml;
+
+  var activeRuns = hRuns.filter(function(r){ return r.qualSegs.length>0; });
+  document.getElementById("hreo-total-banner").innerHTML = hReoTotalLengths > 0
+    ? '<div class="banner" style="background:linear-gradient(135deg,#1a0020,#0d1117);border:1px solid '+COL.hreo+';margin-bottom:14px">' +
+        '<div><div class="ban-label" style="color:'+COL.hreo+'">Total horizontal N12 bar</div>' +
+        '<div style="font-size:13px;color:#3d4f61;margin-top:2px">'+hReoTotalLineal.toFixed(2)+'m across '+activeRuns.length+' run'+(activeRuns.length!==1?"s":"")+'</div></div>' +
+        '<div style="text-align:right"><div style="font-size:10px;color:'+COL.hreo+';text-transform:uppercase;letter-spacing:0.1em">Total '+reoStock+'m lengths</div>' +
+        '<div class="ban-val" style="color:#fff">'+hReoTotalLengths+'</div></div></div>'
+    : "";
+
+  document.getElementById("hreo-notes").innerHTML =
+    "<strong>Horizontal reo notes:</strong><br>Run 1 at <strong style='color:"+COL.hreo+"'>"+courseLabel(String(hRun1At))+"</strong> and Run 2 at <strong style='color:"+COL.hreo+"'>"+courseLabel(String(hRun2At))+"</strong> &mdash; each run calculated separately.<br>" +
+    "Each run = qualifying wall perimeter + <strong style='color:"+COL.hreo+"'>"+hOverlap+"mm overlap per join</strong> (one join per segment junction).<br>" +
+    "Only segments at or above the course threshold contribute to each run. Verify placement with your engineer.";
+}
+
+// Global input listeners for settings panel
+["wastage","coreVoid","reoLap","reoStock","hOverlap"].forEach(function(id) {
+  var el = document.getElementById(id);
+  if(el){ el.addEventListener("input", recalc); el.addEventListener("change", recalc); }
+});
+["reoLowSp","reoHighSp","reoSwitchAt","hRun1At","hRun2At"].forEach(function(id) {
+  var el = document.getElementById(id);
+  if(el){ el.addEventListener("change", recalc); }
+});
+
+renderSegments();
+renderCorners();
+recalc();
+</script>
+</body>
+</html>
